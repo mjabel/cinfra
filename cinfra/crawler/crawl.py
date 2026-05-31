@@ -130,6 +130,8 @@ class Crawler:
             workers,
         )
 
+        idx_width = len(str(max_pages))
+
         async def worker(page: Page) -> None:
             nonlocal started
             while True:
@@ -147,6 +149,7 @@ class Crawler:
                         continue
 
                     visited.append(url)
+                    index = len(visited)  # captured before awaiting extraction
                     links = await self._extract_links(page, allowed_domain)
 
                     new_links = [link for link in links if link not in seen]
@@ -155,8 +158,9 @@ class Crawler:
                         frontier.put_nowait(link)
 
                     LOGGER.info(
-                        "[%d/%d] %s -> %d links (%d new, %d queued)",
-                        len(visited),
+                        "[%*d/%d] %s -> %d links (%d new, %d queued)",
+                        idx_width,
+                        index,
                         max_pages,
                         url,
                         len(links),

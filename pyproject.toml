@@ -23,6 +23,7 @@ venvPath = "."
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra -q"
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 88

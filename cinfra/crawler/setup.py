@@ -1,6 +1,7 @@
 # Obscura download + serve manager
 from __future__ import annotations
 
+import os
 import stat
 import subprocess
 import tarfile
@@ -83,7 +84,11 @@ class Obscura:
             return False
 
     def serve(
-        self, port: int = 9222, stealth: bool = True
+        self,
+        port: int = 9222,
+        workers: int = 1,
+        stealth: bool = True,
+        rust_log: str | None = "off",
     ) -> subprocess.Popen[bytes] | None:
         # If Obscura is already up, reuse it instead of crashing on a bind error.
         if self._is_running(port):
@@ -95,12 +100,31 @@ class Obscura:
         if not self.is_installed():
             self.install()
 
-        cmd = [str(self.binary), "serve", "--port", str(port)]
+        # Each worker handles navigations serially, so concurrent crawling needs
+        # workers >= the number of tabs in flight.
+        cmd = [
+            str(self.binary),
+            "serve",
+            "--port",
+            str(port),
+            "--workers",
+            str(workers),
+        ]
         if stealth:
             cmd.append("--stealth")
 
+        # Obscura logs every page's JS console error (e.g. "Dynamic inline
+        # script error") through the Rust log framework. These come from worker
+        # subprocesses writing to the inherited stderr fd, so piping our own
+        # Popen wouldn't catch them; control it at the source with RUST_LOG,
+        # which the workers inherit. Default "off" keeps the terminal clean;
+        # pass rust_log=None to leave the ambient RUST_LOG untouched for debugging.
+        env = None
+        if rust_log is not None:
+            env = {**os.environ, "RUST_LOG": rust_log}
+
         LOGGER.info("Starting Obscura server: %s", " ".join(cmd))
-        return subprocess.Popen(cmd)
+        return subprocess.Popen(cmd, env=env)
 
 
 if __name__ == "__main__":

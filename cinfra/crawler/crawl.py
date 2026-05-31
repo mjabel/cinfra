@@ -19,7 +19,7 @@ NON_HTML_EXTENSIONS = {
 
 
 def _registrable_domain(url: str) -> str:
-    return tldextract.extract(url).registered_domain.lower()
+    return tldextract.extract(url).top_domain_under_public_suffix.lower()
 
 
 class Crawler:

@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "playwright>=1.60.0",
+    "tldextract>=5.3.1",
 ]
 
 [dependency-groups]
